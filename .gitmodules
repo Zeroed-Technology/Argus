@@ -13,3 +13,6 @@
 [submodule "Frontend"]
 	path = Frontend
 	url = https://github.com/Zeroed-Technology/Frontend
+[submodule "Protobuf"]
+	path = Protobuf
+	url = https://github.com/Zeroed-Technology/Protobuf
