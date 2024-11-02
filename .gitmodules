@@ -1,0 +1,15 @@
+[submodule "agent_comms"]
+	path = agent_comms
+	url = https://github.com/Zeroed-Technology/agent_comms
+[submodule "Agent"]
+	path = Agent
+	url = https://github.com/Zeroed-Technology/Agent
+[submodule "Service"]
+	path = Service
+	url = https://github.com/Zeroed-Technology/Service
+[submodule "Backend"]
+	path = Backend
+	url = https://github.com/Zeroed-Technology/Backend
+[submodule "Frontend"]
+	path = Frontend
+	url = https://github.com/Zeroed-Technology/Frontend
