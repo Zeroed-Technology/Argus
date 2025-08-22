@@ -22,3 +22,7 @@
 	path = Protobuf
 	url = https://github.com/Zeroed-Technology/Protobuf
 	branch = master
+[submodule "ArgusProfiler"]
+	path = ArgusProfiler
+	url = https://github.com/Zeroed-Technology/ArgusProfiler
+	branch = master
