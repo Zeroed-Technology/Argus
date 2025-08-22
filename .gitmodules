@@ -1,18 +1,24 @@
 [submodule "agent_comms"]
 	path = agent_comms
 	url = https://github.com/Zeroed-Technology/agent_comms
+	branch = master
 [submodule "Agent"]
 	path = Agent
 	url = https://github.com/Zeroed-Technology/Agent
+	branch = master
 [submodule "Service"]
 	path = Service
 	url = https://github.com/Zeroed-Technology/Service
+	branch = master
 [submodule "Backend"]
 	path = Backend
 	url = https://github.com/Zeroed-Technology/Backend
+	branch = master
 [submodule "Frontend"]
 	path = Frontend
 	url = https://github.com/Zeroed-Technology/Frontend
+	branch = master
 [submodule "Protobuf"]
 	path = Protobuf
 	url = https://github.com/Zeroed-Technology/Protobuf
+	branch = master
