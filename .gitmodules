@@ -26,3 +26,11 @@
 	path = ArgusProfiler
 	url = https://github.com/Zeroed-Technology/ArgusProfiler
 	branch = master
+[submodule "Installer"]
+	path = Installer
+	url = https://github.com/Zeroed-Technology/Installer
+	branch = master
+[submodule "ArgusBuild"]
+	path = ArgusBuild
+	url = https://github.com/Zeroed-Technology/ArgusBuild
+	branch = main
