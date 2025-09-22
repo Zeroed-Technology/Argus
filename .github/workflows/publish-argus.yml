@@ -75,7 +75,8 @@ jobs:
             docker push ghcr.io/${OWNER_LC}/$image:${SANITIZED_BRANCH_NAME}-${BUILD_NUMBER}
           done
   deploy:
-    runs-on: argus-docker
+    runs-on: [self-hosted, argus-docker]
+    needs: build
     steps:
       - uses: actions/download-artifact@v4
         with:
