@@ -18,20 +18,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          # Read only key with access to limited repos. Github dont let unpaid orgs use secrets with private repos :(
-          token: "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"
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install dependencies for Submodule 1
+      - name: Install dependencies for Frontend
         run: |
           cd Frontend
           npm ci
 
-      - name: Build Submodule 1
+      - name: Build Frontend
         run: |
           cd Frontend
           npm run build
@@ -53,9 +52,15 @@ jobs:
         run: aspire publish -p docker-compose -o artifacts
         working-directory: Backend
 
-      # 5. Optional: Upload artifacts
-      - name: Upload Aspire build
-        uses: actions/upload-artifact@v4
-        with:
-          name: aspire-build
-          path: Backend/artifacts/
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Tag and Push Container Images
+        run: |
+          BUILD_NUMBER=${{ github.run_number }}
+          BRANCH_NAME=${{ github.ref_name }}
+          SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's#[^a-zA-Z0-9._-]#-#g')
+          for image in api controller; do
+            docker tag $image:latest ghcr.io/${{ github.repository_owner }}/$image:${SANITIZED_BRANCH_NAME}-${BUILD_NUMBER}
+            docker push ghcr.io/${{ github.repository_owner }}/$image:${SANITIZED_BRANCH_NAME}-${BUILD_NUMBER}
+          done
