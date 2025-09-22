@@ -53,7 +53,7 @@ jobs:
         working-directory: Backend
 
       - name: List
-        working-directory: Backend
+        working-directory: Backend/artifacts
         run:
           ls -lah
 
