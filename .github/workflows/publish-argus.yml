@@ -77,6 +77,10 @@ jobs:
   deploy:
     runs-on: self-hosted
     needs: build
+    defaults:
+      run:
+        shell: bash
+        
     steps:
       - uses: actions/download-artifact@v4
         with:
