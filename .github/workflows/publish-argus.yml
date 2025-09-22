@@ -1,0 +1,60 @@
+name: Publish Argus
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # 1. Checkout the main repo and submodules
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive  # fetches all submodules
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20' # adjust if needed
+
+      - name: Install dependencies for Submodule 1
+        run: |
+          cd Frontend
+          npm ci
+
+      - name: Build Submodule 1
+        run: |
+          cd Frontend
+          npm run build
+          
+      - name: Prepare build output for Aspire
+        run: |
+          mkdir "Backend/Argus Backend.AppHost/static/"
+          cp -r Frontend/build/* "Backend/Argus Backend.AppHost/static/"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '9.x'
+
+      - name: Install Aspire CLI
+        run: dotnet tool install --global aspire.cli --prerelease
+
+      - name: Run Aspire Publish
+        run: aspire publish -p docker-compose -o artifacts
+        working-directory: Backend
+
+      # 5. Optional: Upload artifacts
+      - name: Upload Aspire build
+        uses: actions/upload-artifact@v4
+        with:
+          name: aspire-build
+          path: Backend/artifacts/
