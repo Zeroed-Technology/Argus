@@ -52,6 +52,14 @@ jobs:
         run: aspire publish -p docker-compose -o artifacts
         working-directory: Backend
 
+      - name: Publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose
+          path: |
+            Backend/artifacts/.env
+            Backend/artifacts/docker-compose.yaml
+
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
@@ -66,3 +74,15 @@ jobs:
             docker tag $image:latest ghcr.io/${OWNER_LC}/$image:${SANITIZED_BRANCH_NAME}-${BUILD_NUMBER}
             docker push ghcr.io/${OWNER_LC}/$image:${SANITIZED_BRANCH_NAME}-${BUILD_NUMBER}
           done
+  deploy:
+    runs-on: argus-docker
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-compose
+          path: Argus/
+      - name: "Deploy"
+        run: |
+          cd Argus/
+          docker login ghcr.io -u $GITHUB_USER -p $GITHUB_TOKEN
+          docker compose down && docker compose up -d
