@@ -14,16 +14,16 @@ jobs:
         shell: bash
 
     steps:
-      # 1. Checkout the main repo and submodules
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
         with:
-          submodules: recursive  # fetches all submodules
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20' # adjust if needed
+          node-version: '20'
 
       - name: Install dependencies for Submodule 1
         run: |
