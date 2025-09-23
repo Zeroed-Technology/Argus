@@ -94,5 +94,4 @@ jobs:
         run: |
           cd Argus/
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          sudo docker compose down
-          sudo docker compose up -d
+          docker compose down && docker compose up -d
