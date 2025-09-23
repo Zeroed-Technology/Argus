@@ -37,8 +37,8 @@ jobs:
           
       - name: Prepare build output for Aspire
         run: |
-          mkdir "Backend/Argus Backend.AppHost/static/"
-          cp -r Frontend/build/* "Backend/Argus Backend.AppHost/static/"
+          mkdir "Frontend/static/"
+          cp -r Frontend/build/* "Frontend/static/"
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
@@ -60,10 +60,12 @@ jobs:
       - name: Publish artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-compose
-          #include-hidden-files: true
+          name: artifacts
           path: |
+            Backend/stream.conf
+            Backend/nginx.conf
             Backend/artifacts/docker-compose.yaml
+            Frontend/static/
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -87,8 +89,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: docker-compose
+          name: artifacts
           path: Argus/
+
       - name: "Deploy"
         run: |
           cd Argus/
