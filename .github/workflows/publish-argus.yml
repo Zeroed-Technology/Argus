@@ -91,7 +91,6 @@ jobs:
 
       - name: "Deploy"
         run: |
-          cd Argus/
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker compose down && docker compose up -d
         env:
