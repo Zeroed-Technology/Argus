@@ -96,5 +96,5 @@ jobs:
           docker compose down && docker compose up -d
         env:
           POSTGRESSERVER_PASSWORD: "${{ secrets.POSTGRESSERVER_PASSWORD }}"
-          CONTROLLER_IMAGE: "zeroed-technology/controller:latest"
-          API_IMAGE: "zeroed-technology/api:latest"
+          CONTROLLER_IMAGE: "ghcr.io/zeroed-technology/controller:latest"
+          API_IMAGE: "ghcr.io/zeroed-technology/api:latest"
