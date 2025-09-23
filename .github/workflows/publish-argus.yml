@@ -37,7 +37,7 @@ jobs:
           
       - name: Prepare build output for Aspire
         run: |
-          mkdir "publish/static/"
+          mkdir -p "publish/static/"
           cp -r Frontend/build/* "publish/static/"
 
       - name: Set up .NET
