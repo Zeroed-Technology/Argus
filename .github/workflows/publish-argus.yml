@@ -37,8 +37,8 @@ jobs:
           
       - name: Prepare build output for Aspire
         run: |
-          mkdir "Frontend/static/"
-          cp -r Frontend/build/* "Frontend/static/"
+          mkdir "publish/static/"
+          cp -r Frontend/build/* "publish/static/"
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
@@ -65,7 +65,7 @@ jobs:
             Backend/stream.conf
             Backend/nginx.conf
             Backend/artifacts/docker-compose.yaml
-            Frontend/static/
+            publish/static/
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
