@@ -54,7 +54,7 @@ jobs:
 
       - name: Move artifacts to publish dir
         working-directory: Backend/artifacts
-        run:
+        run: |
           cp Backend/stream.conf publish/stream.conf
           cp Backend/nginx.conf publish/nginx.conf
           cp Backend/artifacts/docker-compose.yaml publish/docker-compose.yaml
