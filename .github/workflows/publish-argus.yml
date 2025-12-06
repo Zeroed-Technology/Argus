@@ -7,7 +7,8 @@ on:
   pull_request:
 
 jobs:
-  build:
+  setup:
+    name: "Setup environment"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,6 +26,19 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '10.x'
+
+      - name: Create Output Directory
+        run: mkdir -p "publish/static/"
+  
+  build-frontend:
+    name: "Build Frontend"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Install dependencies for Frontend
         run: |
           cd Frontend
@@ -34,67 +48,48 @@ jobs:
         run: |
           cd Frontend
           npm run build
+      
+      - name: Copy to Output Directory
+        run: cp -r Frontend/build/* "publish/static/"
           
-      - name: Prepare build output for Aspire
-        run: |
-          mkdir -p "publish/static/"
-          cp -r Frontend/build/* "publish/static/"
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-            dotnet-version: '9.x'
-
-      - name: Install Aspire CLI
-        run: dotnet tool install --global aspire.cli --prerelease
-
-      - name: Run Aspire Publish
-        run: aspire publish -p docker-compose -o artifacts
+  build-backend:
+    name: "Build Backend"
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        projects:
+          - API
+          - Controller
+    steps:
+      - name: Build Backend Solution
+        run: dotnet build "Argus Backend.sln" -c Release
         working-directory: Backend
 
-      - name: Move artifacts to publish dir
-        run: |
-          cp Backend/stream.conf publish/stream.conf
-          cp Backend/nginx.conf publish/nginx.conf
-          cp Backend/artifacts/docker-compose.yaml publish/docker-compose.yaml
+      - name: Build ${{ matrix.projects }}
+        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true --no-build -o ../publish/${{ matrix.projects }}
+        working-directory: Backend/${{ matrix.projects }}
 
-      - name: Publish artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts
-          path: |
-            publish/
+      - run: ls -alr publish
 
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  # deploy:
+  #   runs-on: self-hosted
+  #   needs: build
+  #   defaults:
+  #     run:
+  #       shell: bash
 
-      - name: Tag and Push Container Images
-        run: |
-          OWNER_LC="${{ github.repository_owner }}"
-          OWNER_LC="${OWNER_LC,,}"
-          SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's#[^a-zA-Z0-9._-]#-#g')
-          for image in api controller; do
-            docker tag $image:latest ghcr.io/${OWNER_LC}/$image:latest
-            docker push ghcr.io/${OWNER_LC}/$image:latest
-          done
-  deploy:
-    runs-on: self-hosted
-    needs: build
-    defaults:
-      run:
-        shell: bash
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: artifacts
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: artifacts
-
-      - name: "Deploy"
-        run: |
-          echo "${{ secrets.POSTGRESSERVER_PASSWORD }}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose down && docker compose up -d
-        env:
-          POSTGRESSERVER_PASSWORD: "${{ secrets.POSTGRESSERVER_PASSWORD }}"
-          CONTROLLER_IMAGE: "ghcr.io/zeroed-technology/controller:latest"
-          API_IMAGE: "ghcr.io/zeroed-technology/api:latest"
+  #     - name: "Deploy"
+  #       run: |
+  #         echo "${{ secrets.POSTGRESSERVER_PASSWORD }}"
+  #         echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  #         docker compose down && docker compose up -d
+  #       env:
+  #         POSTGRESSERVER_PASSWORD: "${{ secrets.POSTGRESSERVER_PASSWORD }}"
+  #         CONTROLLER_IMAGE: "ghcr.io/zeroed-technology/controller:latest"
+  #         API_IMAGE: "ghcr.io/zeroed-technology/api:latest"
