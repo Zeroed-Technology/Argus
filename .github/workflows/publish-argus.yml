@@ -63,7 +63,7 @@ jobs:
         working-directory: Backend
 
       - name: Build Backend Solution
-        run: dotnet build "Argus Backend.sln" -c Release
+        run: dotnet build "Argus Backend.sln" -c Release -r linux-x64
         working-directory: Backend
 
       - name: Build ${{ matrix.projects }}
