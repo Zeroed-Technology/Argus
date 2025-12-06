@@ -59,15 +59,15 @@ jobs:
             dotnet-version: '10.x'
 
       - name: Restore
-        run: dotnet restore "Argus Backend.sln" -r linux-x64
+        run: dotnet restore "Argus Backend.sln"
         working-directory: Backend
 
       - name: Build Backend Solution
-        run: dotnet build "Argus Backend.sln" -c Release -r linux-x64
+        run: dotnet build "Argus Backend.sln" -c Release
         working-directory: Backend
 
       - name: Build ${{ matrix.projects }}
-        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true --no-build
+        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true
         working-directory: Backend/${{ matrix.projects }}
 
       - name: Upload ${{ matrix.projects }} Artifact
