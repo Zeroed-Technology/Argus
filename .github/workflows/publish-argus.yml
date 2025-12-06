@@ -58,6 +58,10 @@ jobs:
         with:
             dotnet-version: '10.x'
 
+      - name: Restore
+        run: dotnet restore
+        working-directory: Backend
+
       - name: Build Backend Solution
         run: dotnet build "Argus Backend.sln" -c Release
         working-directory: Backend
