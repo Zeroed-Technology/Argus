@@ -6,14 +6,10 @@ on:
       - master
   pull_request:
 
-jobs:
-  setup:
-    name: "Setup environment"
+jobs:  
+  build-frontend:
+    name: "Build Frontend"
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
@@ -26,19 +22,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-            dotnet-version: '10.x'
-
-      - name: Create Output Directory
-        run: mkdir -p "publish/static/"
-  
-  build-frontend:
-    name: "Build Frontend"
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
       - name: Install dependencies for Frontend
         run: |
           cd Frontend
@@ -49,12 +32,14 @@ jobs:
           cd Frontend
           npm run build
       
-      - name: Copy to Output Directory
-        run: cp -r Frontend/build/* "publish/static/"
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: Frontend/build
           
   build-backend:
     name: "Build Backend"
-    needs: setup
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -62,15 +47,30 @@ jobs:
           - API
           - Controller
     steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+      
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '10.x'
+
       - name: Build Backend Solution
         run: dotnet build "Argus Backend.sln" -c Release
         working-directory: Backend
 
       - name: Build ${{ matrix.projects }}
-        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true --no-build -o ../publish/${{ matrix.projects }}
+        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true --no-build
         working-directory: Backend/${{ matrix.projects }}
 
-      - run: ls -alr publish
+      - name: Upload ${{ matrix.projects }} Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-${{ matrix.projects }}
+          path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
 
   # deploy:
   #   runs-on: self-hosted
