@@ -75,6 +75,151 @@ jobs:
         with:
           name: backend-${{ matrix.projects }}
           path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
+          retention-days: 1
+  build-deb:
+    name: "Build deb installer"
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-backend]
+    steps:
+      # Downloads all artifacts to $GITHUB_WORKSPACE
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+
+      - name: Prepare deb tree
+        run: |
+          mkdir -p pkg/DEBIAN
+          mkdir -p pkg/opt/argus/api
+          mkdir -p pkg/opt/argus/controller
+          mkdir -p pkg/opt/argus/static
+          mkdir -p pkg/etc/nginx/sites-available
+          mkdir -p pkg/lib/systemd/system
+
+          # Copy binaries
+          cp -r backend-API/* pkg/opt/argus/api/
+          cp -r backend-Controller/* pkg/opt/argus/controller/
+
+          # Copy frontend static files
+          cp -r frontend/* pkg/opt/argus/static/
+
+          cat > pkg/etc/nginx/sites-available/argus.conf << 'EOF'
+          server {
+              listen 80;
+              server_name _;
+
+              root /opt/argus/static;
+              index index.html;
+
+              location /api/ {
+                  proxy_pass         http://127.0.0.1:8443/;
+                  proxy_http_version 1.1;
+                  proxy_set_header   Host $host;
+                  proxy_set_header   X-Real-IP $remote_addr;
+                  proxy_set_header   Upgrade $http_upgrade;
+                  proxy_set_header   Connection keep-alive;
+              }
+
+              location /_app/ {
+                  try_files $uri =404;
+              }
+
+              # Serve static HTML
+              location / {
+                  try_files $uri $uri $uri/ /index.html;
+              }
+          }
+          EOF
+
+          # systemd service for API
+          cat > pkg/lib/systemd/system/argus-api.service << 'EOF'
+          [Unit]
+          Description=Argus API Service
+          After=network.target
+
+          [Service]
+          ExecStart=/opt/argus/api/API
+          Restart=always
+          User=argus
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+          # systemd service for Controller
+          cat > pkg/lib/systemd/system/argus-controller.service << 'EOF'
+          [Unit]
+          Description=Argus Controller Service
+          After=network.target
+
+          [Service]
+          ExecStart=/opt/argus/controller/Controller
+          Restart=always
+          User=argus
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+      # deb metadata
+      - name: Add DEBIAN control + scripts
+        run: |
+          cat > pkg/DEBIAN/control << 'EOF'
+          Package: argus
+          Version: 1.0.0
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Zeroed.Tech
+          Depends: nginx, postgresql
+          Description: Argus IIS Monitor
+          EOF
+
+          cat > pkg/DEBIAN/postinst << 'EOF'
+          #!/bin/bash
+          set -e
+
+          adduser --system --no-create-home --group argus || true
+
+          chown -R argus:argus /opt/argus/api
+          chown -R argus:argus /opt/argus/controller
+
+          systemctl daemon-reload
+          systemctl enable argus-api.service
+          systemctl enable argus-controller.service
+
+          systemctl restart argus-api.service
+          systemctl restart argus-controller.service
+
+          ln -sf /etc/nginx/sites-available/argus.conf /etc/nginx/sites-enabled/argus.conf
+          systemctl restart nginx
+          EOF
+                    chmod 755 pkg/DEBIAN/postinst
+
+                    cat > pkg/DEBIAN/prerm << 'EOF'
+          #!/bin/bash
+          set -e
+          systemctl stop argus-api.service || true
+          systemctl stop argus-controller.service || true
+          EOF
+                    chmod 755 pkg/DEBIAN/prerm
+
+                    cat > pkg/DEBIAN/postrm << 'EOF'
+          #!/bin/bash
+          set -e
+          systemctl disable argus-api.service || true
+          systemctl disable argus-controller.service || true
+          rm -f /etc/nginx/sites-enabled/argus.conf
+          EOF
+          chmod 755 pkg/DEBIAN/postrm
+
+      - name: Build DEB package
+        run: |
+          dpkg-deb --build pkg argus_1.0.0_amd64.deb
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-deb
+          path: argus_1.0.0_amd64.deb
 
   # deploy:
   #   runs-on: self-hosted
