@@ -80,9 +80,11 @@ jobs:
   build-profiler:
     name: "Build Argus Profiler"
     runs-on: windows-latest
+    needs: build-agent
     steps:
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
+        
         with:
           submodules: recursive
           token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
@@ -101,7 +103,7 @@ jobs:
           path: ArgusProfiler\x64\Release\ArgusProfiler.dll
 
   build-agent:
-    name: "Build Agent Communications Library"
+    name: "Build Agent"
     runs-on: windows-latest
     steps:
       - name: Checkout repository with submodules
@@ -117,6 +119,9 @@ jobs:
         run: |
           cd agent_comms
           cargo build --profile release
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
 
       - name: Build Agent
         run: msbuild Agent.sln /p:Configuration=Release
@@ -165,7 +170,6 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v5
       - run: dir
-
 
   build-deb:
     name: "Build deb installer"
