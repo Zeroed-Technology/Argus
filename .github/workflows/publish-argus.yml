@@ -77,31 +77,6 @@ jobs:
           path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
           retention-days: 1
   
-  build-profiler:
-    name: "Build Argus Profiler"
-    runs-on: windows-latest
-    needs: build-agent
-    steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v4
-        
-        with:
-          submodules: recursive
-          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
-      
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Build Profiler
-        run: msbuild ArgusProfiler.sln /t:ArgusProfiler /p:Configuration=Release
-        working-directory: ArgusProfiler
-      
-      - name: Upload frontend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: profiler
-          path: ArgusProfiler\x64\Release\ArgusProfiler.dll
-
   build-agent:
     name: "Build Agent"
     runs-on: windows-latest
@@ -127,11 +102,48 @@ jobs:
         run: msbuild Agent.sln /p:Configuration=Release
         working-directory: Agent
       
-      - name: Upload frontend artifact
+      - name: Upload agent artifact
         uses: actions/upload-artifact@v4
         with:
           name: agent
           path: Agent\bin\x64\Release\Agent.dll
+
+      - name: Upload agent lib
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-lib
+          path: Agent\bin\x64\Release\Agent.lib
+
+  build-profiler:
+    name: "Build Argus Profiler"
+    runs-on: windows-latest
+    needs: build-agent
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+      
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: agent-lib
+
+      - run: dir
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Profiler
+        run: msbuild ArgusProfiler.sln /t:ArgusProfiler /p:Configuration=Release
+        working-directory: ArgusProfiler
+      
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiler
+          path: ArgusProfiler\x64\Release\ArgusProfiler.dll
 
   build-service:
     name: "Build Argus Service"
@@ -156,7 +168,7 @@ jobs:
         run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
         working-directory: Service
       
-      - name: Upload frontend artifact
+      - name: Upload service artifact
         uses: actions/upload-artifact@v4
         with:
           name: agent
