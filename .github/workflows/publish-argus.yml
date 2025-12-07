@@ -139,8 +139,6 @@ jobs:
         with:
           name: agent-lib
 
-      - run: dir
-
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
 
@@ -154,45 +152,74 @@ jobs:
           name: profiler
           path: ArgusProfiler\x64\Release\ArgusProfiler.dll
 
-  # build-service:
-  #   name: "Build Argus Service"
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout repository with submodules
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+  build-service:
+    name: "Build Argus Service"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
 
-  #     - name: Set up .NET
-  #       uses: actions/setup-dotnet@v3
-  #       with:
-  #           dotnet-version: '10.x'
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '10.x'
 
-  #     - name: Restore
-  #       run: dotnet restore "Service.sln"
-  #       working-directory: Service
+      - name: Restore
+        run: dotnet restore "Service.sln"
+        working-directory: Service
 
-  #     - name: Build Service Solution
-  #       run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
-  #       working-directory: Service
+      - name: Build Service Solution
+        run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
+        working-directory: Service
       
-  #     - name: Upload service artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: agent
-  #         path: bin\x64\Release\Agent.dll
+      - name: Upload service artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: service
+          path: Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\Argus.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: service1
+          path: Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\aspnetcorev2_inprocess.dll
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: service2
+          path: Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\e_sqlite3.dll
 
   build-installer:
     name: "Build Argus Agent Installer"
     runs-on: windows-latest
-    needs: [build-agent, build-profiler]
+    needs: [build-agent, build-profiler, build-service]
     steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+
       - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
           merge-multiple: true
-      - run: dir
+          path: Installer
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Profiler
+        run: msbuild /p:Configuration=Release
+        working-directory: Installer
+      
+      - name: Upload Agent Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: Installer\bin\x64\Release\en-US\Argus.msi
 
   # build-deb:
   #   name: "Build deb installer"
