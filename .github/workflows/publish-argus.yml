@@ -7,75 +7,75 @@ on:
   pull_request:
 
 jobs:  
-  build-frontend:
-    name: "Build Frontend"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+  # build-frontend:
+  #   name: "Build Frontend"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository with submodules
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '20'
 
-      - name: Install dependencies for Frontend
-        run: |
-          cd Frontend
-          npm ci
+  #     - name: Install dependencies for Frontend
+  #       run: |
+  #         cd Frontend
+  #         npm ci
 
-      - name: Build Frontend
-        run: |
-          cd Frontend
-          npm run build
+  #     - name: Build Frontend
+  #       run: |
+  #         cd Frontend
+  #         npm run build
       
-      - name: Upload frontend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend
-          path: Frontend/build
+  #     - name: Upload frontend artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: frontend
+  #         path: Frontend/build
           
-  build-backend:
-    name: "Build Backend"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        projects:
-          - API
-          - Controller
-    steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+  # build-backend:
+  #   name: "Build Backend"
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       projects:
+  #         - API
+  #         - Controller
+  #   steps:
+  #     - name: Checkout repository with submodules
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
       
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-            dotnet-version: '10.x'
+  #     - name: Set up .NET
+  #       uses: actions/setup-dotnet@v3
+  #       with:
+  #           dotnet-version: '10.x'
 
-      - name: Restore
-        run: dotnet restore "Argus Backend.sln"
-        working-directory: Backend
+  #     - name: Restore
+  #       run: dotnet restore "Argus Backend.sln"
+  #       working-directory: Backend
 
-      - name: Build Backend Solution
-        run: dotnet build "Argus Backend.sln" -c Release
-        working-directory: Backend
+  #     - name: Build Backend Solution
+  #       run: dotnet build "Argus Backend.sln" -c Release
+  #       working-directory: Backend
 
-      - name: Build ${{ matrix.projects }}
-        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true
-        working-directory: Backend/${{ matrix.projects }}
+  #     - name: Build ${{ matrix.projects }}
+  #       run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true
+  #       working-directory: Backend/${{ matrix.projects }}
 
-      - name: Upload ${{ matrix.projects }} Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-${{ matrix.projects }}
-          path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
-          retention-days: 1
+  #     - name: Upload ${{ matrix.projects }} Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: backend-${{ matrix.projects }}
+  #         path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
+  #         retention-days: 1
   
   build-agent:
     name: "Build Agent"
@@ -145,230 +145,230 @@ jobs:
           name: profiler
           path: ArgusProfiler\x64\Release\ArgusProfiler.dll
 
-  build-service:
-    name: "Build Argus Service"
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+  # build-service:
+  #   name: "Build Argus Service"
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Checkout repository with submodules
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-            dotnet-version: '10.x'
+  #     - name: Set up .NET
+  #       uses: actions/setup-dotnet@v3
+  #       with:
+  #           dotnet-version: '10.x'
 
-      - name: Restore
-        run: dotnet restore "Service.sln"
-        working-directory: Service
+  #     - name: Restore
+  #       run: dotnet restore "Service.sln"
+  #       working-directory: Service
 
-      - name: Build Service Solution
-        run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
-        working-directory: Service
+  #     - name: Build Service Solution
+  #       run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
+  #       working-directory: Service
       
-      - name: Upload service artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: agent
-          path: bin\x64\Release\Agent.dll
+  #     - name: Upload service artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: agent
+  #         path: bin\x64\Release\Agent.dll
 
   build-installer:
     name: "Build Argus Agent Installer"
     runs-on: windows-latest
-    needs: [build-service, build-agent, build-profiler]
+    needs: [build-agent, build-profiler]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v5
       - run: dir
 
-  build-deb:
-    name: "Build deb installer"
-    runs-on: ubuntu-latest
-    needs: [build-frontend, build-backend]
-    steps:
-      # Downloads all artifacts to $GITHUB_WORKSPACE
-      - name: Download artifacts
-        uses: actions/download-artifact@v5
+  # build-deb:
+  #   name: "Build deb installer"
+  #   runs-on: ubuntu-latest
+  #   needs: [build-frontend, build-backend]
+  #   steps:
+  #     # Downloads all artifacts to $GITHUB_WORKSPACE
+  #     - name: Download artifacts
+  #       uses: actions/download-artifact@v5
 
-      - name: Prepare deb tree
-        run: |
-          mkdir -p pkg/DEBIAN
-          mkdir -p pkg/opt/argus/api
-          mkdir -p pkg/opt/argus/controller
-          mkdir -p pkg/opt/argus/static
-          mkdir -p pkg/etc/nginx/sites-available
-          mkdir -p pkg/lib/systemd/system
+  #     - name: Prepare deb tree
+  #       run: |
+  #         mkdir -p pkg/DEBIAN
+  #         mkdir -p pkg/opt/argus/api
+  #         mkdir -p pkg/opt/argus/controller
+  #         mkdir -p pkg/opt/argus/static
+  #         mkdir -p pkg/etc/nginx/sites-available
+  #         mkdir -p pkg/lib/systemd/system
 
-          # Copy binaries
-          cp -r backend-API/* pkg/opt/argus/api/
-          cp -r backend-Controller/* pkg/opt/argus/controller/
+  #         # Copy binaries
+  #         cp -r backend-API/* pkg/opt/argus/api/
+  #         cp -r backend-Controller/* pkg/opt/argus/controller/
 
-          # Copy frontend static files
-          cp -r frontend/* pkg/opt/argus/static/
+  #         # Copy frontend static files
+  #         cp -r frontend/* pkg/opt/argus/static/
 
-          cat > pkg/etc/nginx/sites-available/argus.conf << 'EOF'
-          server {
-              listen 80;
-              server_name _;
+  #         cat > pkg/etc/nginx/sites-available/argus.conf << 'EOF'
+  #         server {
+  #             listen 80;
+  #             server_name _;
 
-              root /opt/argus/static;
-              index index.html;
+  #             root /opt/argus/static;
+  #             index index.html;
 
-              location /api/ {
-                  proxy_pass         http://127.0.0.1:8443;
-                  proxy_http_version 1.1;
-                  proxy_set_header   Host $host;
-                  proxy_set_header   X-Real-IP $remote_addr;
-                  proxy_set_header   Upgrade $http_upgrade;
-                  proxy_set_header   Connection keep-alive;
-              }
+  #             location /api/ {
+  #                 proxy_pass         http://127.0.0.1:8443;
+  #                 proxy_http_version 1.1;
+  #                 proxy_set_header   Host $host;
+  #                 proxy_set_header   X-Real-IP $remote_addr;
+  #                 proxy_set_header   Upgrade $http_upgrade;
+  #                 proxy_set_header   Connection keep-alive;
+  #             }
 
-              location /_app/ {
-                  try_files $uri =404;
-              }
+  #             location /_app/ {
+  #                 try_files $uri =404;
+  #             }
 
-              # Serve static HTML
-              location / {
-                  try_files $uri $uri $uri/ /index.html;
-              }
-          }
-          EOF
+  #             # Serve static HTML
+  #             location / {
+  #                 try_files $uri $uri $uri/ /index.html;
+  #             }
+  #         }
+  #         EOF
 
-          # systemd service for API
-          cat > pkg/lib/systemd/system/argus-api.service << 'EOF'
-          [Unit]
-          Description=Argus API Service
-          After=network.target
+  #         # systemd service for API
+  #         cat > pkg/lib/systemd/system/argus-api.service << 'EOF'
+  #         [Unit]
+  #         Description=Argus API Service
+  #         After=network.target
 
-          [Service]
-          WorkingDirectory=/opt/argus/api/
-          EnvironmentFile=/etc/argus/argus.env
-          ExecStart=/opt/argus/api/API
-          Restart=always
-          User=argus
+  #         [Service]
+  #         WorkingDirectory=/opt/argus/api/
+  #         EnvironmentFile=/etc/argus/argus.env
+  #         ExecStart=/opt/argus/api/API
+  #         Restart=always
+  #         User=argus
 
-          [Install]
-          WantedBy=multi-user.target
-          EOF
+  #         [Install]
+  #         WantedBy=multi-user.target
+  #         EOF
 
-          # systemd service for Controller
-          cat > pkg/lib/systemd/system/argus-controller.service << 'EOF'
-          [Unit]
-          Description=Argus Controller Service
-          After=network.target
+  #         # systemd service for Controller
+  #         cat > pkg/lib/systemd/system/argus-controller.service << 'EOF'
+  #         [Unit]
+  #         Description=Argus Controller Service
+  #         After=network.target
 
-          [Service]
-          WorkingDirectory=/opt/argus/controller
-          EnvironmentFile=/etc/argus/argus.env
-          ExecStart=/opt/argus/controller/Controller
-          Restart=always
-          User=argus
+  #         [Service]
+  #         WorkingDirectory=/opt/argus/controller
+  #         EnvironmentFile=/etc/argus/argus.env
+  #         ExecStart=/opt/argus/controller/Controller
+  #         Restart=always
+  #         User=argus
 
-          [Install]
-          WantedBy=multi-user.target
-          EOF
+  #         [Install]
+  #         WantedBy=multi-user.target
+  #         EOF
 
-      # deb metadata
-      - name: Add deb control and scripts
-        run: |
-          cat > pkg/DEBIAN/control << 'EOF'
-          Package: argus
-          Version: 1.0.0
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Maintainer: Zeroed.Tech <dev@zeroed.tech>
-          Depends: nginx, postgresql, adduser
-          Description: Argus IIS Monitor
-          EOF
+  #     # deb metadata
+  #     - name: Add deb control and scripts
+  #       run: |
+  #         cat > pkg/DEBIAN/control << 'EOF'
+  #         Package: argus
+  #         Version: 1.0.0
+  #         Section: utils
+  #         Priority: optional
+  #         Architecture: amd64
+  #         Maintainer: Zeroed.Tech <dev@zeroed.tech>
+  #         Depends: nginx, postgresql, adduser
+  #         Description: Argus IIS Monitor
+  #         EOF
           
-          cat > pkg/DEBIAN/postinst << 'EOF'
-          #!/bin/bash
-          set -e
+  #         cat > pkg/DEBIAN/postinst << 'EOF'
+  #         #!/bin/bash
+  #         set -e
 
-          if ! id -u argus >/dev/null 2>&1; then
-            adduser --system --no-create-home --group argus || true
-          fi
+  #         if ! id -u argus >/dev/null 2>&1; then
+  #           adduser --system --no-create-home --group argus || true
+  #         fi
 
-          mkdir -p /etc/argus
-          chmod 750 /etc/argus
-          chown argus:argus /etc/argus
+  #         mkdir -p /etc/argus
+  #         chmod 750 /etc/argus
+  #         chown argus:argus /etc/argus
 
-          PG_PASS=$(openssl rand -base64 32)
-          sudo -u postgres psql <<PGEOF
-          DO \$\$
-          BEGIN
-              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
-                  CREATE ROLE argus LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
-              ELSE
-                  ALTER ROLE argus WITH LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
-              END IF;
-          END
-          \$\$;
-          PGEOF
+  #         PG_PASS=$(openssl rand -base64 32)
+  #         sudo -u postgres psql <<PGEOF
+  #         DO \$\$
+  #         BEGIN
+  #             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
+  #                 CREATE ROLE argus LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
+  #             ELSE
+  #                 ALTER ROLE argus WITH LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
+  #             END IF;
+  #         END
+  #         \$\$;
+  #         PGEOF
 
-          echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
-          chmod 640 /etc/argus/argus.env
-          chown argus:argus /etc/argus/argus.env
+  #         echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
+  #         chmod 640 /etc/argus/argus.env
+  #         chown argus:argus /etc/argus/argus.env
 
-          chown -R argus:argus /opt/argus
-          chown -R argus:argus /opt/argus/api
-          chown -R argus:argus /opt/argus/controller
+  #         chown -R argus:argus /opt/argus
+  #         chown -R argus:argus /opt/argus/api
+  #         chown -R argus:argus /opt/argus/controller
 
-          chmod 750 /opt/argus
-          chmod 750 /opt/argus/api/API
-          chmod 750 /opt/argus/controller/Controller
+  #         chmod 750 /opt/argus
+  #         chmod 750 /opt/argus/api/API
+  #         chmod 750 /opt/argus/controller/Controller
 
-          systemctl daemon-reload
-          systemctl enable argus-api.service
-          systemctl enable argus-controller.service
+  #         systemctl daemon-reload
+  #         systemctl enable argus-api.service
+  #         systemctl enable argus-controller.service
 
-          systemctl restart argus-api.service
-          systemctl restart argus-controller.service
+  #         systemctl restart argus-api.service
+  #         systemctl restart argus-controller.service
 
-          ln -sf /etc/nginx/sites-available/argus.conf /etc/nginx/sites-enabled/argus.conf
-          systemctl restart nginx
-          EOF
-          chmod 755 pkg/DEBIAN/postinst
+  #         ln -sf /etc/nginx/sites-available/argus.conf /etc/nginx/sites-enabled/argus.conf
+  #         systemctl restart nginx
+  #         EOF
+  #         chmod 755 pkg/DEBIAN/postinst
 
-          cat > pkg/DEBIAN/prerm << 'EOF'
-          #!/bin/bash
-          set -e
-          systemctl stop argus-api.service || true
-          systemctl stop argus-controller.service || true
-          EOF
+  #         cat > pkg/DEBIAN/prerm << 'EOF'
+  #         #!/bin/bash
+  #         set -e
+  #         systemctl stop argus-api.service || true
+  #         systemctl stop argus-controller.service || true
+  #         EOF
           
-          chmod 755 pkg/DEBIAN/prerm
+  #         chmod 755 pkg/DEBIAN/prerm
 
-          cat > pkg/DEBIAN/postrm << 'EOF'
-          #!/bin/bash
-          set -e
-          systemctl disable argus-api.service || true
-          systemctl disable argus-controller.service || true
-          rm -f /etc/nginx/sites-enabled/argus.conf
+  #         cat > pkg/DEBIAN/postrm << 'EOF'
+  #         #!/bin/bash
+  #         set -e
+  #         systemctl disable argus-api.service || true
+  #         systemctl disable argus-controller.service || true
+  #         rm -f /etc/nginx/sites-enabled/argus.conf
 
-          if [ "$1" = "purge" ]; then
-              # Remove user only on purge
-              deluser --system argus 2>/dev/null || true
-              delgroup argus 2>/dev/null || true
+  #         if [ "$1" = "purge" ]; then
+  #             # Remove user only on purge
+  #             deluser --system argus 2>/dev/null || true
+  #             delgroup argus 2>/dev/null || true
 
-              rm -rf /etc/argus
-              rm -rf /opt/argus
-          fi
-          EOF
-          chmod 755 pkg/DEBIAN/postrm
+  #             rm -rf /etc/argus
+  #             rm -rf /opt/argus
+  #         fi
+  #         EOF
+  #         chmod 755 pkg/DEBIAN/postrm
 
-      - name: Build DEB package
-        run: |
-          dpkg-deb --build pkg argus_1.0.0_amd64.deb
+  #     - name: Build DEB package
+  #       run: |
+  #         dpkg-deb --build pkg argus_1.0.0_amd64.deb
 
-      - name: Upload Debian package
-        uses: actions/upload-artifact@v4
-        with:
-          name: argus-deb
-          path: argus_1.0.0_amd64.deb
+  #     - name: Upload Debian package
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: argus-deb
+  #         path: argus_1.0.0_amd64.deb
 
   # deploy:
   #   runs-on: self-hosted
