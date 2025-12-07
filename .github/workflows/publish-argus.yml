@@ -136,6 +136,7 @@ jobs:
           After=network.target
 
           [Service]
+          EnvironmentFile=/etc/argus/argus.env
           ExecStart=/opt/argus/api/API
           Restart=always
           User=argus
@@ -151,6 +152,7 @@ jobs:
           After=network.target
 
           [Service]
+          EnvironmentFile=/etc/argus/argus.env
           ExecStart=/opt/argus/controller/Controller
           Restart=always
           User=argus
@@ -160,7 +162,7 @@ jobs:
           EOF
 
       # deb metadata
-      - name: Add DEBIAN control + scripts
+      - name: Add deb control and scripts
         run: |
           cat > pkg/DEBIAN/control << 'EOF'
           Package: argus
@@ -168,19 +170,43 @@ jobs:
           Section: utils
           Priority: optional
           Architecture: amd64
-          Maintainer: Zeroed.Tech
-          Depends: nginx, postgresql
+          Maintainer: Zeroed.Tech <dev@zeroed.tech>
+          Depends: nginx, postgresql, adduser
           Description: Argus IIS Monitor
           EOF
-
+          
           cat > pkg/DEBIAN/postinst << 'EOF'
           #!/bin/bash
           set -e
 
-          adduser --system --no-create-home --group argus || true
+          if ! id -u argus >/dev/null 2>&1; then
+            adduser --system --no-create-home --group argus || true
+          fi
+
+          mkdir -p /etc/argus
+          chmod 750 /etc/argus
+          chown argus:argus /etc/argus
+
+          PG_PASS=$(openssl rand -base64 32)
+          sudo -u postgres psql <<EOF
+          DO \$\$
+          BEGIN
+              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
+                  CREATE ROLE argus LOGIN PASSWORD '${PG_PASS}';
+              END IF;
+          END
+          \$\$;
+          EOF
+
+          echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
+          chmod 640 /etc/argus/argus.env
+          chown argus:argus /etc/argus/argus.env
 
           chown -R argus:argus /opt/argus/api
           chown -R argus:argus /opt/argus/controller
+
+          chmod 755 /opt/argus/api
+          chmod 755 /opt/argus/controller
 
           systemctl daemon-reload
           systemctl enable argus-api.service
@@ -208,6 +234,15 @@ jobs:
           systemctl disable argus-api.service || true
           systemctl disable argus-controller.service || true
           rm -f /etc/nginx/sites-enabled/argus.conf
+
+          if [ "$1" = "purge" ]; then
+              # Remove user only on purge
+              deluser --system argus 2>/dev/null || true
+              delgroup argus 2>/dev/null || true
+
+              rm -rf /etc/argus
+              rm -rf /opt/argus
+          fi
           EOF
           chmod 755 pkg/DEBIAN/postrm
 
