@@ -188,7 +188,7 @@ jobs:
           chown argus:argus /etc/argus
 
           PG_PASS=$(openssl rand -base64 32)
-          sudo -u postgres psql <<EOF
+          sudo -u postgres psql <<PGEOF
           DO \$\$
           BEGIN
               IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
@@ -196,7 +196,7 @@ jobs:
               END IF;
           END
           \$\$;
-          EOF
+          PGEOF
 
           echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
           chmod 640 /etc/argus/argus.env
@@ -218,17 +218,18 @@ jobs:
           ln -sf /etc/nginx/sites-available/argus.conf /etc/nginx/sites-enabled/argus.conf
           systemctl restart nginx
           EOF
-                    chmod 755 pkg/DEBIAN/postinst
+          chmod 755 pkg/DEBIAN/postinst
 
-                    cat > pkg/DEBIAN/prerm << 'EOF'
+          cat > pkg/DEBIAN/prerm << 'EOF'
           #!/bin/bash
           set -e
           systemctl stop argus-api.service || true
           systemctl stop argus-controller.service || true
           EOF
-                    chmod 755 pkg/DEBIAN/prerm
+          
+          chmod 755 pkg/DEBIAN/prerm
 
-                    cat > pkg/DEBIAN/postrm << 'EOF'
+          cat > pkg/DEBIAN/postrm << 'EOF'
           #!/bin/bash
           set -e
           systemctl disable argus-api.service || true
