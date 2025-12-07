@@ -136,6 +136,7 @@ jobs:
           After=network.target
 
           [Service]
+          WorkingDirectory=/opt/argus/api/
           EnvironmentFile=/etc/argus/argus.env
           ExecStart=/opt/argus/api/API
           Restart=always
@@ -152,6 +153,7 @@ jobs:
           After=network.target
 
           [Service]
+          WorkingDirectory=/opt/argus/controller
           EnvironmentFile=/etc/argus/argus.env
           ExecStart=/opt/argus/controller/Controller
           Restart=always
