@@ -76,6 +76,91 @@ jobs:
           name: backend-${{ matrix.projects }}
           path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
           retention-days: 1
+  
+  build-profiler:
+    name: "Build Argus Profiler"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+
+      - name: Build Profiler
+        run: msbuild ArgusProfiler.sln /t:ArgusProfiler /p:Configuration=Release
+        working-directory: ArgusProfiler
+      
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiler
+          path: ArgusProfiler\x64\Release\ArgusProfiler.dll
+
+  build-agent:
+    name: "Build Agent Communications Library"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+
+      - name: Build comms library
+        run: |
+          cd agent_comms
+          cargo build --profile release
+
+      - name: Build Agent
+        run: msbuild Agent.sln /p:Configuration=Release
+        working-directory: Agent
+      
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent
+          path: Agent\bin\x64\Release\Agent.dll
+
+  build-service:
+    name: "Build Argus Service"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '10.x'
+
+      - name: Restore
+        run: dotnet restore "Argus Backend.sln"
+        working-directory: Service
+
+      - name: Build Service Solution
+        run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
+        working-directory: Service
+      
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent
+          path: bin\x64\Release\Agent.dll
+
+  build-installer:
+    name: "Build Argus Service"
+    runs-on: windows-latest
+    needs: [build-service, build-agent, build-profiler]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+      - run: dir
+
+
   build-deb:
     name: "Build deb installer"
     runs-on: ubuntu-latest
@@ -206,11 +291,13 @@ jobs:
           chmod 640 /etc/argus/argus.env
           chown argus:argus /etc/argus/argus.env
 
+          chown -R argus:argus /opt/argus
           chown -R argus:argus /opt/argus/api
           chown -R argus:argus /opt/argus/controller
 
-          chmod 755 /opt/argus/api/API
-          chmod 755 /opt/argus/controller/Controller
+          chmod 750 /opt/argus
+          chmod 750 /opt/argus/api/API
+          chmod 750 /opt/argus/controller/Controller
 
           systemctl daemon-reload
           systemctl enable argus-api.service
