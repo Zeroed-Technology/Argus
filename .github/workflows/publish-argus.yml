@@ -231,7 +231,7 @@ jobs:
   build-deb:
     name: "Build deb installer"
     runs-on: ubuntu-latest
-    needs: [build-frontend, build-backend]
+    needs: [build-frontend, build-backend, build-installer]
     steps:
       # Downloads all artifacts to $GITHUB_WORKSPACE
       - name: Download artifacts
