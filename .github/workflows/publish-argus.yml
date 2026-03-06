@@ -144,7 +144,7 @@ jobs:
             dotnet-version: '10.x'
 
       - name: Build MSI
-        run: dotnet build .\Installer.wixproj -c Release -p:BuildVersion=1.0.${{ github.run_number }}
+        run: dotnet build .\Installer.wixproj -c Release -p:Platform=x64 -p:BuildVersion=1.0.${{ github.run_number }}
         working-directory: Installer
       
       - name: Upload Agent Installer
