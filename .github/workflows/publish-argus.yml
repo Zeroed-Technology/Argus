@@ -441,11 +441,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: argus-deb
-          path: argus.deb
+          path: /tmp/argus.deb
 
       - name: Deploy
         run: |
-          sudo mv argus-dev/argus.deb /tmp/argus.deb
           sudo apt install /tmp/argus.deb
           sudo rm /tmp/argus.deb
         
