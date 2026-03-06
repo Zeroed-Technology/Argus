@@ -438,9 +438,9 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: argus-deb
+      # - uses: actions/download-artifact@v4
+      #   with:
+      #     name: argus-deb
 
       - name: Deploy
         run: |
