@@ -379,8 +379,11 @@ jobs:
           cat > pkg/DEBIAN/prerm << 'EOF'
           #!/bin/bash
           set -e
-          systemctl stop argus-api.service || true
-          systemctl stop argus-controller.service || true
+          if [ "$1" = "remove" ] || [ "$1" = "upgrade" ]; then
+              echo "Stopping Argus services..."
+              systemctl stop argus-api.service || true
+              systemctl stop argus-controller.service || true
+          fi
           EOF
           
           chmod 755 pkg/DEBIAN/prerm
@@ -388,9 +391,12 @@ jobs:
           cat > pkg/DEBIAN/postrm << 'EOF'
           #!/bin/bash
           set -e
-          systemctl disable argus-api.service || true
-          systemctl disable argus-controller.service || true
-          rm -f /etc/nginx/sites-enabled/argus.conf
+          if [ "$1" = "remove" ]; then
+              echo "Disabling Argus services..."
+              systemctl disable argus-api.service || true
+              systemctl disable argus-controller.service || true
+              rm -f /etc/nginx/sites-enabled/argus.conf
+          fi
 
           if [ "$1" = "purge" ]; then
               # Remove user only on purge
@@ -423,24 +429,21 @@ jobs:
             frontend
             installer
 
-  # deploy:
-  #   runs-on: self-hosted
-  #   needs: build
-  #   defaults:
-  #     run:
-  #       shell: bash
+  deploy:
+    runs-on: self-hosted
+    needs: build-deb
+    defaults:
+      run:
+        shell: bash
 
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: artifacts
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: argus-deb
 
-  #     - name: "Deploy"
-  #       run: |
-  #         echo "${{ secrets.POSTGRESSERVER_PASSWORD }}"
-  #         echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-  #         docker compose down && docker compose up -d
-  #       env:
-  #         POSTGRESSERVER_PASSWORD: "${{ secrets.POSTGRESSERVER_PASSWORD }}"
-  #         CONTROLLER_IMAGE: "ghcr.io/zeroed-technology/controller:latest"
-  #         API_IMAGE: "ghcr.io/zeroed-technology/api:latest"
+      - name: Deploy
+        run: |
+          sudo mv argus-dev/argus_1.0.${{ github.run_number }}_amd64.deb /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
+          sudo apt install /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
+          sudo rm /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
+        
