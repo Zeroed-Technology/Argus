@@ -7,76 +7,6 @@ on:
   pull_request:
 
 jobs:  
-  build-frontend:
-    name: "Build Frontend"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: Install dependencies for Frontend
-        run: |
-          cd Frontend
-          npm ci
-
-      - name: Build Frontend
-        run: |
-          cd Frontend
-          npm run build
-      
-      - name: Upload frontend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend
-          path: Frontend/build
-          
-  build-backend:
-    name: "Build Backend"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        projects:
-          - API
-          - Controller
-    steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
-      
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-            dotnet-version: '10.x'
-
-      - name: Restore
-        run: dotnet restore "Argus Backend.sln"
-        working-directory: Backend
-
-      - name: Build Backend Solution
-        run: dotnet build "Argus Backend.sln" -c Release
-        working-directory: Backend
-
-      - name: Build ${{ matrix.projects }}
-        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained true
-        working-directory: Backend/${{ matrix.projects }}
-
-      - name: Upload ${{ matrix.projects }} Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-${{ matrix.projects }}
-          path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
-          retention-days: 1
-  
   build-agent:
     name: "Build Agent"
     runs-on: windows-latest
@@ -172,7 +102,7 @@ jobs:
         working-directory: Service
 
       - name: Build Service Solution
-        run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained true
+        run: dotnet publish -c Release -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} --self-contained true
         working-directory: Service
       
       - name: Upload service artifact
@@ -208,11 +138,13 @@ jobs:
           merge-multiple: true
           path: Installer
 
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v2
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '10.x'
 
       - name: Build MSI
-        run: msbuild /p:Configuration=Release
+        run: dotnet build .\Installer.wixproj -c Release -p:BuildVersion=1.0.${{ github.run_number }}
         working-directory: Installer
       
       - name: Upload Agent Installer
@@ -221,12 +153,75 @@ jobs:
           name: installer
           path: Installer\bin\x64\Release\en-US\Argus.msi
 
-      - uses: geekyeggo/delete-artifact@v5
+  build-frontend:
+    name: "Build Frontend"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
         with:
-          name: |
-            service*
-            profiler
-            agent*
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies for Frontend
+        run: |
+          cd Frontend
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd Frontend
+          npm run build
+      
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: Frontend/build
+          
+  build-backend:
+    name: "Build Backend"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        projects:
+          - API
+          - Controller
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+      
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+            dotnet-version: '10.x'
+
+      - name: Restore
+        run: dotnet restore "Argus Backend.sln"
+        working-directory: Backend
+
+      - name: Build Backend Solution
+        run: dotnet build "Argus Backend.sln" -c Release
+        working-directory: Backend
+
+      - name: Build ${{ matrix.projects }}
+        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} --self-contained true
+        working-directory: Backend/${{ matrix.projects }}
+
+      - name: Upload ${{ matrix.projects }} Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-${{ matrix.projects }}
+          path: Backend/${{ matrix.projects }}/bin/Release/net10.0/linux-x64/publish/${{ matrix.projects }}
+          retention-days: 1
 
   build-deb:
     name: "Build deb installer"
@@ -323,7 +318,7 @@ jobs:
         run: |
           cat > pkg/DEBIAN/control << 'EOF'
           Package: argus
-          Version: 1.0.0
+          Version: 1.0.${{ github.run_number }}
           Section: utils
           Priority: optional
           Architecture: amd64
@@ -410,13 +405,23 @@ jobs:
 
       - name: Build DEB package
         run: |
-          dpkg-deb --build pkg argus_1.0.0_amd64.deb
+          dpkg-deb --build pkg argus_1.0.${{ github.run_number }}_amd64.deb
 
       - name: Upload Debian package
         uses: actions/upload-artifact@v4
         with:
           name: argus-deb
-          path: argus_1.0.0_amd64.deb
+          path: argus_1.0.${{ github.run_number }}_amd64.deb
+
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            service*
+            profiler
+            agent*
+            backend*
+            frontend
+            installer
 
   # deploy:
   #   runs-on: self-hosted
