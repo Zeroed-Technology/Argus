@@ -430,6 +430,7 @@ jobs:
             installer
 
   deploy:
+    name: "Deploy Argus 1.0.${{ github.run_number }}"
     runs-on: self-hosted
     needs: build-deb
     defaults:
@@ -440,10 +441,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: argus-deb
+          path: argus.deb
 
       - name: Deploy
         run: |
-          sudo mv argus-dev/argus_1.0.${{ github.run_number }}_amd64.deb /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
-          sudo apt install /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
-          sudo rm /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
+          sudo mv argus-dev/argus.deb /tmp/argus.deb
+          sudo apt install /tmp/argus.deb
+          sudo rm /tmp/argus.deb
         
