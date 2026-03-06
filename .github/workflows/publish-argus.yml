@@ -364,6 +364,11 @@ jobs:
           chmod 750 /opt/argus/api/API
           chmod 750 /opt/argus/controller/Controller
 
+          usermod -aG argus www-data || true
+          chown -R argus:argus /opt/argus
+          find /opt/argus/static -type d -exec chmod 750 {} +
+          find /opt/argus/static -type f -exec chmod 640 {} +
+
           systemctl daemon-reload
           systemctl enable argus-api.service
           systemctl enable argus-controller.service
