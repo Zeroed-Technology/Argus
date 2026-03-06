@@ -444,7 +444,7 @@ jobs:
 
       - name: Deploy
         run: |
-          sudo mv argus-dev/argus_1.0.${{ github.run_number }}_amd64.deb /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
+          sudo mv Argus/Argus/argus_1.0.${{ github.run_number }}_amd64.deb /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
           sudo apt install /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
           sudo rm /tmp/argus_1.0.${{ github.run_number }}_amd64.deb
         
