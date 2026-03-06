@@ -432,7 +432,7 @@ jobs:
   deploy:
     name: "Deploy Argus 1.0.${{ github.run_number }}"
     runs-on: self-hosted
-    # needs: build-deb
+    needs: build-deb
     defaults:
       run:
         shell: bash
