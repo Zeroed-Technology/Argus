@@ -109,17 +109,30 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: service
-          path: Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\Argus.exe
+          path: Service\Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\Argus.exe
 
       - uses: actions/upload-artifact@v4
         with:
           name: service1
-          path: Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\aspnetcorev2_inprocess.dll
+          path: Service\Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\aspnetcorev2_inprocess.dll
 
       - uses: actions/upload-artifact@v4
         with:
           name: service2
-          path: Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\e_sqlite3.dll
+          path: Service\Service\bin\x64\Release\net10.0-windows7.0\win-x64\publish\e_sqlite3.dll
+      
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Updater
+        run: msbuild Service.sln /t:Updater /p:Configuration=Release
+        working-directory: Service\Updater
+      
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater
+          path: Service\Updater\x64\Release\Updater.exe
 
   build-installer:
     name: "Build Argus Agent Installer"
@@ -146,6 +159,19 @@ jobs:
       - name: Build MSI
         run: dotnet build .\Installer.wixproj -c Release -p:Platform=x64 -p:BuildVersion=1.0.${{ github.run_number }}
         working-directory: Installer
+      
+      - name: Sign MSI
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.SIGNING_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        working-directory: Installer
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP "signing_cert.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERT_BASE64))
+          $signtool = (Get-ChildItem -Recurse -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "signtool.exe" | Select-Object -First 1).FullName
+          & $signtool sign /f $certPath /p $env:CERT_PASSWORD /t http://timestamp.digicert.com /fd SHA256 /v "Installer\bin\x64\Release\en-US\Argus.msi"
+          Remove-Item $certPath
       
       - name: Upload Agent Installer
         uses: actions/upload-artifact@v4
@@ -427,6 +453,7 @@ jobs:
         with:
           name: |
             service*
+            updater
             profiler
             agent*
             backend*
