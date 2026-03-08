@@ -219,6 +219,8 @@ jobs:
         run: |
           cd Frontend
           npm run build
+        env:
+          VITE_BUILD_NUMBER: 1.0.${{ github.run_number }}
       
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
@@ -382,20 +384,27 @@ jobs:
           chmod 750 /etc/argus
           chown argus:argus /etc/argus
 
-          PG_PASS=$(openssl rand -base64 32)
-          sudo -u postgres psql <<PGEOF
-          DO \$\$
-          BEGIN
-              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
-                  CREATE ROLE argus LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
-              ELSE
-                  ALTER ROLE argus WITH LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
-              END IF;
-          END
-          \$\$;
-          PGEOF
+          if [ ! -f /etc/argus/argus.env ]; then
+              PG_PASS=$(openssl rand -base64 32)
+              ARGUS_JWT_SECRET=$(openssl rand -base64 32)
+              ARGUS_PEPPER=$(openssl rand -base64 32)
+              sudo -u postgres psql <<PGEOF
+              DO \$\$
+              BEGIN
+                  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
+                      CREATE ROLE argus LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
+                  ELSE
+                      ALTER ROLE argus WITH LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
+                  END IF;
+              END
+              \$\$;
+              PGEOF
 
-          echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
+              echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
+              echo "ARGUS_JWT_SECRET=${ARGUS_JWT_SECRET}" >> /etc/argus/argus.env
+              echo "ARGUS_PEPPER=${ARGUS_PEPPER}" >> /etc/argus/argus.env
+          fi
+
           chmod 640 /etc/argus/argus.env
           chown argus:argus /etc/argus/argus.env
 
@@ -420,7 +429,7 @@ jobs:
           systemctl restart argus-controller.service
 
           ln -sf /etc/nginx/sites-available/argus.conf /etc/nginx/sites-enabled/argus.conf
-          systemctl restart nginx
+          systemctl reload nginx
           EOF
           chmod 755 pkg/DEBIAN/postinst
 
