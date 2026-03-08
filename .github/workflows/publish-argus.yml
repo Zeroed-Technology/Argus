@@ -19,6 +19,8 @@ jobs:
       
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache crates
         uses: actions/cache@v4
@@ -126,7 +128,7 @@ jobs:
 
       - name: Build Updater
         run: msbuild Service.sln /t:Updater /p:Configuration=Release
-        working-directory: Service\Updater
+        working-directory: Service
       
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
