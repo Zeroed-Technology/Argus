@@ -102,7 +102,7 @@ jobs:
         working-directory: Service
 
       - name: Build Service Solution
-        run: dotnet publish -c Release -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} --self-contained true
+        run: dotnet publish Service/Service.csproj -c Release -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} --self-contained true
         working-directory: Service
       
       - name: Upload service artifact
