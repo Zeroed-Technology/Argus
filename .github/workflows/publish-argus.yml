@@ -185,7 +185,7 @@ jobs:
           $certPath = Join-Path $env:RUNNER_TEMP "signing_cert.pfx"
           [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERT_BASE64))
           $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
-          & $signtool sign /f $certPath /p $env:CERT_PASSWORD /t http://timestamp.digicert.com /fd SHA256 /v "Installer\bin\x64\Release\en-US\Argus.msi"
+          & $signtool sign /f $certPath /p $env:CERT_PASSWORD /t http://timestamp.digicert.com /fd SHA256 /v "bin\x64\Release\en-US\Argus.msi"
           Remove-Item $certPath
       
       - name: Upload Agent Installer
