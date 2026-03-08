@@ -398,7 +398,7 @@ jobs:
                   END IF;
               END
               \$\$;
-              PGEOF
+          PGEOF
 
               echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
               echo "ARGUS_JWT_SECRET=${ARGUS_JWT_SECRET}" >> /etc/argus/argus.env
