@@ -274,207 +274,48 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-frontend, build-backend, build-installer]
     steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PUBLISH_ACCESS_TOKEN }}
+
       - name: Download artifacts
         uses: actions/download-artifact@v5
 
       - name: Prepare deb tree
+        working-directory: Deb
         run: |
-          mkdir -p pkg/DEBIAN
-          mkdir -p pkg/opt/argus/api
-          mkdir -p pkg/opt/argus/controller
-          mkdir -p pkg/opt/argus/static
-          mkdir -p pkg/etc/nginx/sites-available
-          mkdir -p pkg/lib/systemd/system
-
           # Copy binaries
-          cp -r backend-API/* pkg/opt/argus/api/
-          cp -r backend-Controller/* pkg/opt/argus/controller/
+          cp -r ../backend-API/* pkg/opt/argus/api/
+          cp -r ../backend-Controller/* pkg/opt/argus/controller/
 
           # Copy frontend static files
-          cp -r frontend/* pkg/opt/argus/static/
+          cp -r ../frontend/* pkg/opt/argus/static/
 
           # Copy MSI to static dir
-          cp -r installer/Argus.msi pkg/opt/argus/static/
-
-          cat > pkg/etc/nginx/sites-available/argus.conf << 'EOF'
-          server {
-              listen 80;
-              server_name _;
-
-              root /opt/argus/static;
-              index index.html;
-
-              location /api/ {
-                  proxy_pass         http://127.0.0.1:8443;
-                  proxy_http_version 1.1;
-                  proxy_set_header   Host $host;
-                  proxy_set_header   X-Real-IP $remote_addr;
-                  proxy_set_header   Upgrade $http_upgrade;
-                  proxy_set_header   Connection keep-alive;
-              }
-
-              location /_app/ {
-                  try_files $uri =404;
-              }
-
-              # Serve static HTML
-              location / {
-                  try_files $uri $uri $uri/ /index.html;
-              }
-          }
-          EOF
-
-          # systemd service for API
-          cat > pkg/lib/systemd/system/argus-api.service << 'EOF'
-          [Unit]
-          Description=Argus API Service
-          After=network.target
-
-          [Service]
-          WorkingDirectory=/opt/argus/api/
-          EnvironmentFile=/etc/argus/argus.env
-          ExecStart=/opt/argus/api/API
-          Restart=always
-          User=argus
-
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-
-          # systemd service for Controller
-          cat > pkg/lib/systemd/system/argus-controller.service << 'EOF'
-          [Unit]
-          Description=Argus Controller Service
-          After=network.target
-
-          [Service]
-          WorkingDirectory=/opt/argus/controller
-          EnvironmentFile=/etc/argus/argus.env
-          ExecStart=/opt/argus/controller/Controller
-          Restart=always
-          User=argus
-
-          [Install]
-          WantedBy=multi-user.target
-          EOF
+          cp -r ../installer/Argus.msi pkg/opt/argus/static/
 
       # deb metadata
       - name: Add deb control and scripts
+        working-directory: Deb
         run: |
-          cat > pkg/DEBIAN/control << 'EOF'
-          Package: argus
-          Version: 1.0.${{ github.run_number }}
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Maintainer: Zeroed.Tech <dev@zeroed.tech>
-          Depends: nginx, postgresql, adduser
-          Description: Argus IIS Monitor
-          EOF
+          cat "Version: 1.0.${{ github.run_number }}" >> pkg/DEBIAN/control
           
-          cat > pkg/DEBIAN/postinst << 'EOF'
-          #!/bin/bash
-          set -e
-
-          if ! id -u argus >/dev/null 2>&1; then
-            adduser --system --no-create-home --group argus || true
-          fi
-
-          mkdir -p /etc/argus
-          chmod 750 /etc/argus
-          chown argus:argus /etc/argus
-
-          if [ ! -f /etc/argus/argus.env ]; then
-              PG_PASS=$(openssl rand -base64 32)
-              ARGUS_JWT_SECRET=$(openssl rand -base64 32)
-              ARGUS_PEPPER=$(openssl rand -base64 32)
-              sudo -u postgres psql <<PGEOF
-              DO \$\$
-              BEGIN
-                  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'argus') THEN
-                      CREATE ROLE argus LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
-                  ELSE
-                      ALTER ROLE argus WITH LOGIN PASSWORD '${PG_PASS}' CREATEDB NOSUPERUSER NOCREATEROLE;
-                  END IF;
-              END
-              \$\$;
-          PGEOF
-
-              echo "ConnectionStrings__Argus=Host=localhost;Database=Argus;Username=argus;Password=${PG_PASS}" > /etc/argus/argus.env
-              echo "ARGUS_JWT_SECRET=${ARGUS_JWT_SECRET}" >> /etc/argus/argus.env
-              echo "ARGUS_PEPPER=${ARGUS_PEPPER}" >> /etc/argus/argus.env
-          fi
-
-          chmod 640 /etc/argus/argus.env
-          chown argus:argus /etc/argus/argus.env
-
-          chown -R argus:argus /opt/argus
-          chown -R argus:argus /opt/argus/api
-          chown -R argus:argus /opt/argus/controller
-
-          chmod 750 /opt/argus
-          chmod 750 /opt/argus/api/API
-          chmod 750 /opt/argus/controller/Controller
-
-          usermod -aG argus www-data || true
-          chown -R argus:argus /opt/argus
-          find /opt/argus/static -type d -exec chmod 750 {} +
-          find /opt/argus/static -type f -exec chmod 640 {} +
-
-          systemctl daemon-reload
-          systemctl enable argus-api.service
-          systemctl enable argus-controller.service
-
-          systemctl restart argus-api.service
-          systemctl restart argus-controller.service
-
-          ln -sf /etc/nginx/sites-available/argus.conf /etc/nginx/sites-enabled/argus.conf
-          systemctl reload nginx
-          EOF
           chmod 755 pkg/DEBIAN/postinst
-
-          cat > pkg/DEBIAN/prerm << 'EOF'
-          #!/bin/bash
-          set -e
-          if [ "$1" = "remove" ] || [ "$1" = "upgrade" ]; then
-              echo "Stopping Argus services..."
-              systemctl stop argus-api.service || true
-              systemctl stop argus-controller.service || true
-          fi
-          EOF
-          
           chmod 755 pkg/DEBIAN/prerm
-
-          cat > pkg/DEBIAN/postrm << 'EOF'
-          #!/bin/bash
-          set -e
-          if [ "$1" = "remove" ]; then
-              echo "Disabling Argus services..."
-              systemctl disable argus-api.service || true
-              systemctl disable argus-controller.service || true
-              rm -f /etc/nginx/sites-enabled/argus.conf
-          fi
-
-          if [ "$1" = "purge" ]; then
-              # Remove user only on purge
-              deluser --system argus 2>/dev/null || true
-              delgroup argus 2>/dev/null || true
-
-              rm -rf /etc/argus
-              rm -rf /opt/argus
-          fi
-          EOF
           chmod 755 pkg/DEBIAN/postrm
 
       - name: Build DEB package
         run: |
           dpkg-deb --build pkg argus_1.0.${{ github.run_number }}_amd64.deb
+        working-directory: Deb
 
       - name: Upload Debian package
         uses: actions/upload-artifact@v4
         with:
           name: argus-deb
-          path: argus_1.0.${{ github.run_number }}_amd64.deb
+          path: Deb/argus_1.0.${{ github.run_number }}_amd64.deb
           if-no-files-found: error
 
       - uses: geekyeggo/delete-artifact@v5

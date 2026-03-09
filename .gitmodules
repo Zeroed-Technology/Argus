@@ -34,3 +34,6 @@
 	path = ArgusBuild
 	url = https://github.com/Zeroed-Technology/ArgusBuild
 	branch = main
+[submodule "Deb"]
+	path = Deb
+	url = https://github.com/Zeroed-Technology/Deb
