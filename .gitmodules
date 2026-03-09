@@ -37,3 +37,4 @@
 [submodule "Deb"]
 	path = Deb
 	url = https://github.com/Zeroed-Technology/Deb
+	branch = master
