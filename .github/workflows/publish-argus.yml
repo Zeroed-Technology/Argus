@@ -330,6 +330,7 @@ jobs:
         working-directory: Deb
         run: |
           echo "Version: 1.0.${{ github.run_number }}" >> pkg/DEBIAN/control
+          cat pkg/DEBIAN/control
           
           chmod 755 pkg/DEBIAN/postinst
           chmod 755 pkg/DEBIAN/prerm
