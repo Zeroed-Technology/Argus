@@ -329,7 +329,7 @@ jobs:
       - name: Add deb control and scripts
         working-directory: Deb
         run: |
-          cat "Version: 1.0.${{ github.run_number }}" >> pkg/DEBIAN/control
+          echo "Version: 1.0.${{ github.run_number }}" >> pkg/DEBIAN/control
           
           chmod 755 pkg/DEBIAN/postinst
           chmod 755 pkg/DEBIAN/prerm
