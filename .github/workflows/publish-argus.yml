@@ -312,9 +312,10 @@ jobs:
         working-directory: Deb
         run: |
           # Copy binaries
-          pwd
-          ls -alh
-          ls -alh ..
+          mkdir -p pkg/opt/argus/api
+          mkdir -p pkg/opt/argus/controller
+          mkdir -p pkg/opt/argus/static
+          
           cp -r ../backend-API/* pkg/opt/argus/api/
           cp -r ../backend-Controller/* pkg/opt/argus/controller/
 
