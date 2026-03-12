@@ -118,14 +118,14 @@ jobs:
         working-directory: Service
 
       - name: Build Service Solution
-        run: dotnet publish Service/Service.csproj -c Release --arch x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} --self-contained true
+        run: dotnet publish Service/Service.csproj -c ReleaseDev --arch x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} --self-contained true
         working-directory: Service
       
       - name: Upload service artifact
         uses: actions/upload-artifact@v4
         with:
           name: service
-          path: Service\Service\bin\Release\net10.0-windows7.0\win-x64\publish\Argus.exe
+          path: Service\Service\bin\ReleaseDev\net10.0-windows7.0\win-x64\publish\Argus.exe
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
