@@ -125,22 +125,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: service
-          path: Service\Service\bin\ReleaseDev\net10.0-windows7.0\win-x64\publish\Argus.exe
-          if-no-files-found: error
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: service1
-          path: Service\Service\bin\Release\net10.0-windows7.0\win-x64\publish\aspnetcorev2_inprocess.dll
-          if-no-files-found: error
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: service2
-          path: Service\Service\bin\Release\net10.0-windows7.0\win-x64\publish\e_sqlite3.dll
+          path: |
+                Service\Service\bin\ReleaseDev\net10.0-windows7.0\win-x64\publish\Argus.exe
+                Service\Service\bin\ReleaseDev\net10.0-windows7.0\win-x64\publish\aspnetcorev2_inprocess.dll
+                Service\Service\bin\ReleaseDev\net10.0-windows7.0\win-x64\publish\e_sqlite3.dll
           if-no-files-found: error
       
-      - name: Add msbuild to PATH
+      - name: Add msbuild to PATHS
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Updater
@@ -351,7 +342,7 @@ jobs:
       - uses: geekyeggo/delete-artifact@v5
         with:
           name: |
-            service*
+            service
             updater
             profiler
             agent*
