@@ -85,7 +85,6 @@ jobs:
         working-directory: ArgusProfiler
 
       - name: Stage Artifacts
-        working-directory: ArgusProfiler
         shell: pwsh
         run: |
           Copy-Item "ArgusProfiler\x64\Release\ArgusProfiler.dll" -Destination .
