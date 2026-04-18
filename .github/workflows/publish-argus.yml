@@ -77,11 +77,11 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Profiler
-        run: msbuild ArgusProfiler.sln /t:ArgusProfiler /p:Configuration=Release
+        run: msbuild ArgusProfiler.sln /t:ArgusProfiler /p:Configuration=Release /p:OutputPath=".\ "
         working-directory: ArgusProfiler
       
       - name: Build Hooks Assembly
-        run: msbuild ArgusProfiler.sln /t:ArgusHooks /p:Configuration=Release /p:FileVersion=1.0.${{ github.run_number }}
+        run: msbuild ArgusProfiler.sln /t:ArgusHooks /p:Configuration=Release /p:FileVersion=1.0.${{ github.run_number }} /p:OutputPath=".\ "
         working-directory: ArgusProfiler
 
       - name: Upload profiler artifact
@@ -89,8 +89,8 @@ jobs:
         with:
           name: profiler
           path: |
-            ArgusProfiler\x64\Release\ArgusProfiler.dll
-            ArgusProfiler\ArgusHooks\bin\ArgusHooks.dll
+            ArgusProfiler\ArgusProfiler.dll
+            ArgusProfiler\ArgusHooks.dll
           if-no-files-found: error
 
   build-service:
