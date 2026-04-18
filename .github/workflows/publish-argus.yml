@@ -79,7 +79,7 @@ jobs:
       - name: Build Profiler
         run: msbuild ArgusProfiler.sln /t:ArgusProfiler /p:Configuration=Release
         working-directory: ArgusProfiler
-      
+
       - name: Build Hooks Assembly
         run: msbuild ArgusProfiler.sln /t:ArgusHooks /p:Configuration=Release /p:FileVersion=1.0.${{ github.run_number }}
         working-directory: ArgusProfiler
@@ -87,8 +87,8 @@ jobs:
       - name: Stage Artifacts
         shell: pwsh
         run: |
-          Copy-Item "ArgusProfiler\x64\Release\ArgusProfiler.dll" -Destination .
-          Copy-Item "ArgusProfiler\ArgusHooks\bin\Release\ArgusHooks.dll" -Destination .
+          Copy-Item "ArgusProfiler\x64\Release\ArgusProfiler.dll" -Destination ArgusProfiler\
+          Copy-Item "ArgusProfiler\ArgusHooks\bin\Release\ArgusHooks.dll" -Destination ArgusProfiler\
 
       - name: Upload profiler artifact
         uses: actions/upload-artifact@v4
