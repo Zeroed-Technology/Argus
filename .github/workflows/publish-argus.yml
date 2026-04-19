@@ -40,7 +40,7 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Agent
-        run: msbuild Agent.sln /p:Configuration=Release -preprocess
+        run: msbuild Agent.sln /p:Configuration=Release
         working-directory: Agent
 
       - name: Upload agent artifact
