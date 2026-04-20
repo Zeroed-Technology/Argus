@@ -146,7 +146,7 @@ jobs:
       - name: Add msbuild to PATHS
         uses: microsoft/setup-msbuild@v2
 
-      # - name: Build Updater
+      # - name: Build Update r 
       #   run: msbuild Service.sln /t:Updater /p:Configuration=Release
       #   working-directory: Service
 
