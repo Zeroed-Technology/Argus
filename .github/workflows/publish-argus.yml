@@ -146,16 +146,16 @@ jobs:
       - name: Add msbuild to PATHS
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build Updater
-        run: msbuild Service.sln /t:Updater /p:Configuration=Release
-        working-directory: Service
+      # - name: Build Updater
+      #   run: msbuild Service.sln /t:Updater /p:Configuration=Release
+      #   working-directory: Service
 
-      - name: Upload updater artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: updater
-          path: Service\Updater\x64\Release\Updater.exe
-          if-no-files-found: error
+      # - name: Upload updater artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: updater
+      #     path: Service\Updater\x64\Release\Updater.exe
+      #     if-no-files-found: error
 
   build-installer:
     name: "Build Argus Agent Installer"
@@ -355,7 +355,6 @@ jobs:
         with:
           name: |
             service
-            updater
             profiler
             agent*
             backend*
